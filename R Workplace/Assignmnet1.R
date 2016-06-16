@@ -14,7 +14,7 @@ pollutantmean <- function(directory, pollutant, id = 1:332) {
     data <- NULL
     for (i in id ) {
         path <- pathFinder(x = i, directory = directory)
-        new <- read.csv(path,header = TRUE)
+        new <- read.csv(path, header = TRUE)
         data <- rbind (data, new)
     }
     target.var <- paste('data', '$', pollutant, sep = '')
@@ -41,9 +41,9 @@ corr <- function(directory , threshold = 0) {
     for (i in 1:332 ) {
         if (complete (directory, i)$nobs >= threshold) {
             path <- pathFinder(x = i, directory = directory)
-            new <- read.csv(path,header = TRUE)
-            new <- new [complete.cases(new),]
-            new.cor <- cor(new$sulfate,new$nitrate)
+            new <- read.csv(path, header = TRUE)
+            new <- new [complete.cases(new), ]
+            new.cor <- cor(new$sulfate, new$nitrate)
             if (!is.na(new.cor)){
                 cr <- c(cr, new.cor)
             }
