@@ -26,7 +26,7 @@ complete <- function(directory, id = 1:332) {
     data <- data.frame(x=integer(), y=integer())
     for (i in id ) {
         path <- pathFinder(x = i, directory = directory)
-        new <- read.csv(path,header = TRUE)
+        new <- read.csv(path, header = TRUE)
         new <- new [complete.cases(new),]
         No <- nrow(new)
         data <- rbind(data, c(i, No))
