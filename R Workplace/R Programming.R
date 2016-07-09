@@ -38,6 +38,3 @@ abs(y[1]-y[3])
 
 debug(ls)
 tapply(mtcars$hp, mtcars$cyl, mean)
-
-
-v
