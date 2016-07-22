@@ -59,19 +59,6 @@ best <- function(state, outcome) {
     print(outcome.sorted[1,3])
 }
 
-best("TX", "heart attack")
-"CYPRESS FAIRBANKS MEDICAL CENTER"
-best("TX", "heart failure")
-"FORT DUNCAN MEDICAL CENTER"
-best("MD", "heart attack")
-"JOHNS HOPKINS HOSPITAL, THE"
-best("MD", "pneumonia")
-"GREATER BALTIMORE MEDICAL CENTER"
-best("BB", "heart attack")
-#"Error in best("BB", "heart attack") : invalid state"
-best("NY", "hert attack")
-#"Error in best("NY", "hert attack") : invalid outcome"
-
 rankhospital <- function(state, outcome, num = "best") {
     
     ######################################## 
@@ -130,141 +117,66 @@ rankhospital <- function(state, outcome, num = "best") {
     }
 }
 
-rankhospital("TX", "heart failure", 4)
-"DETAR HOSPITAL NAVARRO"
-rankhospital("MD", "heart attack", "worst")
-"HARFORD MEMORIAL HOSPITAL"
-rankhospital("MN", "heart attack", 5000)
-
 rankall <- function(outcome, num = "best") {
-    ######################################## 
     ## Read outcome data
     outcome.csv <- read.csv("dataProgAssignment3-data/outcome-of-care-measures.csv", colClasses = "character", header = TRUE)
-    ########################################
-    # Outcome validity check
+    ## Outcome validity check
     if(!(outcome %in% c("heart attack","heart failure","pneumonia"))) stop("The outcome does not exist!!!")
     # Num validity check
     if (is.na(as.numeric(num))) {
         if (tolower (num) != "best" & tolower (num) != "worst") stop("The num is incorrect!!!")
     }
+    ######################################## 
+    ## Return hospital name in that state with the lowest 30-day death
+    if(outcome == "heart attack") {
+        outcome.filtered <- outcome.csv %>%
+            dplyr::select(Hospital.Name, State, Heart.Attack = Hospital.30.Day.Death..Mortality..Rates.from.Heart.Attack)
+    }
+    else if(outcome == "heart failure") {
+        outcome.filtered <- outcome.csv %>%
+            dplyr::select(Hospital.Name, State, Heart.Failure = Hospital.30.Day.Death..Mortality..Rates.from.Heart.Failure)
+    }
+    else {
+        outcome.filtered <- outcome.csv %>%
+            dplyr::select(Hospital.Name, State, Pneumonia = Hospital.30.Day.Death..Mortality..Rates.from.Pneumonia)
+    }
+    outcome.filtered[ , 3] <- as.numeric(outcome.filtered[ , 3])
+    outcome.filtered$State <- as.factor(outcome.filtered$State)
+    if (tolower (num) == "worst") outcome.filtered <- na.omit(outcome.filtered)
+    outcome.split <- split(outcome.filtered, outcome.filtered$State, drop = FALSE)
+    outcome.sorted <- lapply (outcome.split, function(x) arrange(x, x[ ,3], x[ ,1]))
     
-    ######################################## 
-    ## Return hospital name in that state with the lowest 30-day death
-    if(outcome == "heart attack") {
-        outcome.filtered <- outcome.csv %>%
-            dplyr::select(Hospital.Name, State, Hospital.30.Day.Death..Mortality..Rates.from.Heart.Attack)
-        outcome.filtered[ ,3] <- as.numeric(outcome.filtered[ ,3])
-        outcome.filtered <- complete.cases(outcome.filtered[ ,3])
-        outcome.sorted <- outcome.filtered %>%
-            dplyr::arrange(outcome.filtered[ ,3], outcome.filtered[ ,1])
-    }
-    else if(outcome == "heart failure") {
-        outcome.filtered <- outcome.csv %>%
-            dplyr::select(Hospital.Name, State, Hospital.30.Day.Death..Mortality..Rates.from.Heart.Failure)
-        outcome.filtered <- complete.cases(outcome.filtered[ ,3])
-        outcome.filtered <- na.omit(outcome.filtered)
-        outcome.sorted <- outcome.filtered %>%
-            dplyr::arrange(outcome.filtered[ ,3], outcome.filtered[ ,1])
-    }
-    else {
-        outcome.filtered <- outcome.csv %>%
-            dplyr::select(Hospital.Name, State, Hospital.30.Day.Death..Mortality..Rates.from.Pneumonia)
-        outcome.filtered[, 3] <- as.numeric(outcome.filtered[ ,3])
-        outcome.filtered <- complete.cases(outcome.filtered[ ,3])
-        outcome.sorted <- outcome.filtered %>%
-            dplyr::arrange(outcome.filtered[ ,3], outcome.filtered[ ,1])
-    }
-    ######################################## 
-    ## rate
-    if (tolower(num) == "best") {
-        print(dplyr::slice(outcome.sorted, 1))
-    }
-    else if (tolower(num) == "worst") {
-        print(dplyr::slice(outcome.sorted, nrow(outcome.sorted)))
-    }
-    else {
-        print(dplyr::slice(outcome.sorted, 1:as.numeric(num)))
-    }
-}
-
-
-rankall <- function(outcome, num = "best") {
-    ######################################## 
-    ## Read outcome data
-    outcome.csv <- read.csv("dataProgAssignment3-data/outcome-of-care-measures.csv", colClasses = "character", header = TRUE)
-    ########################################
-    # Outcome validity check
-    if(!(outcome %in% c("heart attack","heart failure","pneumonia"))) stop("The outcome does not exist!!!")
-    # Num validity check
-    if (is.na(as.numeric(num))) {
-        if (tolower (num) != "best" & tolower (num) != "worst") stop("The num is incorrect!!!")
-    }
-    ######################################## 
-    ## Return hospital name in that state with the lowest 30-day death
-    if(outcome == "heart attack") {
-        outcome.filtered <- outcome.csv %>%
-            dplyr::select(Hospital.Name, State, Heart.Attack =Hospital.30.Day.Death..Mortality..Rates.from.Heart.Attack)
-        outcome.filtered[ , 3] <- as.numeric(outcome.filtered[ , 3])
-        outcome.filtered$State <- as.factor(outcome.filtered$State)
-        outcome.split <- split(outcome.filtered, outcome.filtered$State , drop = FALSE)
-        outcome.sorted <- lapply (outcome.split, function(x) arrange(x, x [,3]))
-       
-        outcome.selected <- sapply (outcome.sorted, function(x) slice (x, 20))
-        outcome.selected <- as.data.frame(outcome.selected)
-        outcome.selected [2,] <- names(outcome.selected)
-        outcome.transposed <- as.data.frame (t(outcome.selected))
-        for(i in 1:nrow(outcome.transposed)) {
-            if (outcome.transposed[i,1] == "character(0)") {
-                outcome.transposed[i,1]<- NA
-                print(i)
-            }
+    if (tolower (num) == "best") outcome.selected <- sapply (outcome.sorted, function(x) slice (x, 1))
+    else if (tolower (num) == "worst") outcome.selected <- sapply (outcome.sorted, function(x) filter (x, row_number()== n()))
+    else outcome.selected <- sapply (outcome.sorted, function(x) slice (x, num))
+    
+    outcome.selected <- as.data.frame(outcome.selected)
+    outcome.selected [2, ] <- names(outcome.selected)
+    outcome.transposed <- as.data.frame (t(outcome.selected))
+    for(i in 1:nrow(outcome.transposed)) {
+        if (outcome.transposed[i,1] == "character(0)") {
+            outcome.transposed[i,1] <- "<NA>"
+            print(i)
         }
-        
-        length(outcome.transposed[1,1]) == "character(0)"
-        
-        str(outcome.filtered)
-        str(outcome.split)
-        outcome.split[1]
-        outcome.selected[1,]
-        outcome.sorted[1]
-        outcome.filtered <- outcome.filtered[complete.cases(outcome.filtered[ , 3]), ]
-      
+            print(num)
     }
-    else if(outcome == "heart failure") {
-        outcome.filtered <- outcome.csv %>%
-            dplyr::select(Hospital.Name, State, Hospital.30.Day.Death..Mortality..Rates.from.Heart.Failure)
-        outcome.filtered[ ,3] <- as.numeric(outcome.filtered[ , 3])
-        outcome.filtered <- complete.cases(outcome.filtered[ , 3])
-        outcome.sorted <- outcome.filtered %>%
-            dplyr::arrange(outcome.filtered[ ,3], outcome.filtered[ ,1])
-    }
-    else {
-        outcome.filtered <- outcome.csv %>%
-            dplyr::select(Hospital.Name, State, Hospital.30.Day.Death..Mortality..Rates.from.Pneumonia)
-        outcome.filtered[, 3] <- as.numeric(outcome.filtered[ ,3])
-        outcome.filtered <- complete.cases(outcome.filtered[ ,3])
-        outcome.sorted <- outcome.filtered %>%
-            dplyr::arrange(outcome.filtered[ ,3], outcome.filtered[ ,1])
-    }
-    ######################################## 
-    ## rate
-    if (tolower(num) == "best") {
-        outcome.grouped <- outcome.sorted %>%
-            group_by(State) %>%
-            slice(20)
-    }
-    else if (tolower(num) == "worst") {
-        outcome.grouped <- outcome.sorted %>%
-            group_by(State) %>%
-            slice(-1)
-    }
-    else {
-        outcome.grouped <- outcome.sorted %>%
-            group_by(State) %>%
-            slice(as.numeric(num)) 
-    }
-    outcome.grouped %>%
-        dplyr::select(Hospital.Name, State)
+    outcome.transposed
 }
+
+best("SC", "heart attack")
+best("NY", "pneumonia")
+best("AK", "pneumonia")
+rankhospital("NC", "heart attack", "worst")
+rankhospital("WA", "heart attack", 7)
+rankhospital("TX", "pneumonia", 10)
+rankhospital("HI", "heart attack", 4)
+
+tail(rankall("heart failure"), 10)
+
+r <- rankall("heart attack", 4)
+as.character(subset(r, State == "HI")$Hospital.Name)
 
 head(rankall("heart attack", 20), 10)
+
+r <- rankall("heart failure", 10)
+as.character(subset(r, State == "NV")$Hospital.Name)
